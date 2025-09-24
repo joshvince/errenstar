@@ -1,0 +1,7 @@
+---
+description:
+globs:
+alwaysApply: true
+---
+
+I am an experienced software developer using this project to learn Golang. Your answers should reflect my overall experience but lack of understanding of syntax and internals of Golang. I do not need generic programming concepts explained, but I will need help writing idiomatic Go. Favour shorter answers and less code generated, and explain any advanced Golang concepts.

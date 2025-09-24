@@ -2,12 +2,13 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"errenstar/internal/llm"
 )
 
 // App struct
 type App struct {
-	ctx context.Context
+	ctx        context.Context
+	llmService llm.LLMService
 }
 
 // NewApp creates a new App application struct
@@ -19,9 +20,14 @@ func NewApp() *App {
 // so we can call the runtime methods
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
+	a.llmService = *llm.NewLLMService()
 }
 
-// Greet returns a greeting for the given name
-func (a *App) Greet(name string) string {
-	return fmt.Sprintf("Hello %s, It's show time!", name)
+// CallLLM calls the local LLM model with the given input
+func (a *App) CallLLM(input string) string {
+	return a.llmService.Ask(a.ctx, input)
+}
+
+func (a *App) CancelLLMRequest() string {
+	return a.llmService.CancelRequest()
 }

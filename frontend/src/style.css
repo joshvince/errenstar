@@ -24,3 +24,129 @@ body {
     height: 100vh;
     text-align: center;
 }
+
+.container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+h1 {
+    margin: 20px 0;
+    color: #ffffff;
+    font-size: 2rem;
+}
+
+.chat-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 20px;
+    margin-top: 20px;
+}
+
+.messages {
+    flex: 1;
+    overflow-y: auto;
+    margin-bottom: 20px;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    max-height: 400px;
+}
+
+.message {
+    margin: 10px 0;
+    padding: 10px 15px;
+    border-radius: 15px;
+    max-width: 80%;
+    word-wrap: break-word;
+    white-space: pre-wrap;
+}
+
+.message.user {
+    background: #007bff;
+    color: white;
+    margin-left: auto;
+    text-align: right;
+}
+
+.message.assistant {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    margin-right: auto;
+}
+
+.input-container {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+}
+
+#userInput {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.9);
+    color: #333;
+    font-family: inherit;
+    font-size: 14px;
+    resize: vertical;
+    min-height: 20px;
+    max-height: 100px;
+}
+
+#userInput:focus {
+    outline: none;
+    background: white;
+}
+
+#userInput:disabled {
+    background: rgba(255, 255, 255, 0.5);
+    cursor: not-allowed;
+}
+
+#sendBtn, #cancelBtn {
+    padding: 12px 24px;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    transition: background-color 0.2s;
+}
+
+#sendBtn {
+    background: #007bff;
+}
+
+#cancelBtn {
+    background: #dc3545;
+}
+
+#sendBtn:hover:not(:disabled) {
+    background: #0056b3;
+}
+
+#cancelBtn:hover:not(:disabled) {
+    background: #c82333;
+}
+
+#sendBtn:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+}
+
+.logo {
+    height: 60px;
+    width: 60px;
+}

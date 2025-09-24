@@ -6,7 +6,28 @@
     <title>Errenstar</title>
   </head>
   <body>
-    <div id="app"></div>
+    <div id="app">
+      <div class="container">
+        <img id="logo" class="logo" />
+        <h1>LLM Chat</h1>
+        <div class="chat-container">
+          <div class="messages" id="messages">
+            <div class="message assistant">
+              Hello! I'm your local LLM assistant. Ask me anything!
+            </div>
+          </div>
+          <div class="input-container">
+            <textarea
+              id="userInput"
+              placeholder="Type your message here..."
+              rows="3"
+            ></textarea>
+            <button id="sendBtn" onclick="sendMessage()">Send</button>
+            <button id="cancelBtn" onclick="cancelMessage()">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
     <script src="./src/main.js" type="module"></script>
   </body>
 </html>
