@@ -3,7 +3,9 @@ package jsonconversion
 import (
 	"bytes"
 	"encoding/json"
-	"regexp"
+	"html"
+
+	"github.com/microcosm-cc/bluemonday"
 )
 
 type KankaJSON struct {
@@ -51,9 +53,12 @@ func fileInputToStruct(fileInput []byte, kankaObj KankaJSON) (KankaJSON, error) 
 }
 
 func stripHTMLTags(rawString string) string {
-	// Strips the contents of the tags but not the text inside
-	htmlTagRegex := regexp.MustCompile(`<[^>]*>`)
-	cleanText := htmlTagRegex.ReplaceAllString(rawString, "")
+	// Use bluemonday to strip all HTML tags but preserve text content
+	p := bluemonday.StrictPolicy()
+	cleanText := p.Sanitize(rawString)
 
-	return cleanText
+	// Decode HTML entities like &#39; to actual characters
+	decodedText := html.UnescapeString(cleanText)
+
+	return decodedText
 }
