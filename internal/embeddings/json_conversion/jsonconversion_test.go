@@ -8,7 +8,7 @@ import (
 )
 
 func readTestFileContents(t *testing.T) []byte {
-	fixturePath := "testdata/character_example.json"
+	fixturePath := "../testdata/character_example.json"
 	handler, err := fileops.NewFileHandler(fixturePath)
 
 	if err != nil {
@@ -44,7 +44,7 @@ func TestExtractMarkdownFromJSON_NoHistory(t *testing.T) {
 		t.Errorf("Failed to write to string %v", err)
 	}
 
-	if strings.Contains(strings.ToLower(result), "history") {
+	if strings.Contains(strings.ToLower(string(result)), "history") {
 		t.Errorf("Result should omit anything inside HTML tag attributes, but got: %s", result)
 	}
 }
@@ -58,7 +58,7 @@ func TestExtractMarkdownFromJSON_NoHTMLTags(t *testing.T) {
 	}
 
 	htmlTagRegex := regexp.MustCompile(`<[^>]*>`)
-	if htmlTagRegex.MatchString(result) {
+	if htmlTagRegex.MatchString(string(result)) {
 		t.Errorf("Result should not contain HTML tags, but got: %s", result)
 	}
 }

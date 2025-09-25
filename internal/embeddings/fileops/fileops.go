@@ -5,6 +5,20 @@ import (
 	"os"
 )
 
+func Write(path string, contents []byte) (*FileHandler, error) {
+	err := os.WriteFile(path, contents, 0644)
+	if err != nil {
+		return nil, err
+	}
+
+	handler, err := NewFileHandler(path)
+	if err != nil {
+		return nil, err
+	}
+
+	return handler, nil
+}
+
 // FileHandler represents a file manipulation handler
 type FileHandler struct {
 	file *os.File
@@ -40,4 +54,8 @@ func (fh *FileHandler) Read() ([]byte, error) {
 	}
 
 	return contents, nil
+}
+
+func (fh *FileHandler) GetPath() string {
+	return fh.file.Name()
 }

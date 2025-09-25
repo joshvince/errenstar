@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func createTestFileHandler(t *testing.T, fileContent string) *FileHandler {
+func CreateTestFileHandler(t *testing.T, fileContent string) *FileHandler {
 	// Create a temporary file for testing and open it
 	tmpFile, err := os.CreateTemp("", "test_*.txt")
 	if err != nil {
@@ -36,7 +36,7 @@ func createTestFileHandler(t *testing.T, fileContent string) *FileHandler {
 }
 
 func TestFileHandler_Open_Close(t *testing.T) {
-	handler := createTestFileHandler(t, "Hello")
+	handler := CreateTestFileHandler(t, "Hello")
 
 	// Test closing the file
 	err := handler.Close()
@@ -47,7 +47,7 @@ func TestFileHandler_Open_Close(t *testing.T) {
 
 func TestFileHandler_Read(t *testing.T) {
 	fileContent := "Hello, World!"
-	handler := createTestFileHandler(t, fileContent)
+	handler := CreateTestFileHandler(t, fileContent)
 
 	// Test reading the file
 	data, err := handler.Read()
@@ -58,4 +58,32 @@ func TestFileHandler_Read(t *testing.T) {
 	if string(data) != fileContent {
 		t.Errorf("Expected content %q, got %q", fileContent, string(data))
 	}
+}
+
+func TestFileHandler_Write(t *testing.T) {
+	path := "test_file.md"
+	contentString := "Hello, World!"
+
+	// Clean up the test file after the test
+	t.Cleanup(func() {
+		os.Remove(path)
+	})
+
+	handler, err := Write(path, []byte(contentString))
+	if err != nil {
+		t.Errorf("Failed to write the file: %v", err)
+	}
+
+	outputFileContents, err := handler.Read()
+	if err != nil {
+		t.Errorf("Failed to read the written file: %v", err)
+	}
+
+	outputContentsString := string(outputFileContents)
+	if outputContentsString != contentString {
+		t.Errorf("The written file did not match the input: %s: %v", outputContentsString, err)
+	}
+
+	// Close the handler
+	handler.Close()
 }

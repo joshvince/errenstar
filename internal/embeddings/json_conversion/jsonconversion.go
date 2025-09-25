@@ -1,9 +1,9 @@
 package jsonconversion
 
 import (
+	"bytes"
 	"encoding/json"
 	"regexp"
-	"strings"
 )
 
 type KankaJSON struct {
@@ -11,24 +11,24 @@ type KankaJSON struct {
 	Entry string `json:"entry"`
 }
 
-func ExtractMarkdownFromJSON(fileInput []byte) (string, error) {
-	var outputString string
+func ExtractMarkdownFromJSON(fileInput []byte) ([]byte, error) {
+	var output []byte
 
 	kankaStruct, err := convertKankaToStruct(fileInput)
 	if err != nil {
-		return outputString, err
+		return output, err
 	}
 
-	var builder strings.Builder
+	var buffer bytes.Buffer
 
-	builder.WriteString("# Name: \n")
-	builder.WriteString(kankaStruct.Name)
-	builder.WriteString("\n\n")
-	builder.WriteString("# Details: \n")
+	buffer.WriteString("# Name:\n")
+	buffer.WriteString(kankaStruct.Name)
+	buffer.WriteString("\n\n")
+	buffer.WriteString("# Details:\n")
+	buffer.WriteString(stripHTMLTags(kankaStruct.Entry))
+	output = buffer.Bytes()
 
-	builder.WriteString(stripHTMLTags(kankaStruct.Entry))
-
-	return builder.String(), nil
+	return output, nil
 }
 
 func convertKankaToStruct(fileInput []byte) (KankaJSON, error) {
