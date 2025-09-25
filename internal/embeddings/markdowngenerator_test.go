@@ -14,7 +14,7 @@ func createTempDirAndFileHandler(t *testing.T) *fileops.FileHandler {
 	tempDir := t.TempDir()
 	inputPath := filepath.Join(tempDir, "character_example.json")
 
-	inputData, err := os.ReadFile("testdata/character_example.json")
+	inputData, err := os.ReadFile("testdata/characters/character_example.json")
 	require.NoError(t, err)
 	err = os.WriteFile(inputPath, inputData, 0644)
 	require.NoError(t, err)
@@ -27,14 +27,16 @@ func createTempDirAndFileHandler(t *testing.T) *fileops.FileHandler {
 
 func TestCreateMarkdownFromJSONFile(t *testing.T) {
 	inputFileHandler := createTempDirAndFileHandler(t)
-	expectedOutputHandler, err := fileops.NewFileHandler("testdata/expected_output.md")
-	require.NoError(t, err)
 
 	outputFileHandler, err := createMarkdownFromJSONFile(inputFileHandler)
 	require.NoError(t, err)
 
+	expectedOutputHandler, err := fileops.NewFileHandler("testdata/characters/expected_output.md")
+	require.NoError(t, err)
+
 	expectedOutput, _ := expectedOutputHandler.Read()
-	actualOutput, _ := outputFileHandler.Read()
+	actualOutput, err := outputFileHandler.Read()
+	require.NoError(t, err)
 
 	assert.Equal(t, string(actualOutput), string(expectedOutput))
 }
