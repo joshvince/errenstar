@@ -2,7 +2,7 @@ package embeddings
 
 import (
 	"errenstar/internal/embeddings/fileops"
-	jsonconversion "errenstar/internal/embeddings/json_conversion"
+	"errenstar/internal/embeddings/jsonconversion"
 	"strings"
 )
 
