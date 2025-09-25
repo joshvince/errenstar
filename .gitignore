@@ -2,4 +2,8 @@ build/bin
 node_modules
 frontend/dist
 
+# Keep the directory for the content but not the actual files.
+raw_content/*
+!raw_content/.keep
+
 *.DS_Store
