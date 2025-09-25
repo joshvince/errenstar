@@ -3,8 +3,38 @@ package embeddings
 import (
 	"errenstar/internal/embeddings/fileops"
 	"errenstar/internal/embeddings/jsonconversion"
+	"io/fs"
+	"path/filepath"
 	"strings"
 )
+
+func ConvertDirectoriesToMarkdown(path string) error {
+	err := filepath.WalkDir(path, visit)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func visit(path string, entry fs.DirEntry, err error) error {
+	if err != nil {
+		return err
+	}
+
+	if !entry.IsDir() && strings.HasSuffix(path, ".json") {
+		handler, err := fileops.NewFileHandler(path)
+		if err != nil {
+			return err
+		}
+
+		_, err = createMarkdownFromJSONFile(handler)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
 func createMarkdownFromJSONFile(handler *fileops.FileHandler) (*fileops.FileHandler, error) {
 	var contents []byte
