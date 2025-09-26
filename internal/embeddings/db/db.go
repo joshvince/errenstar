@@ -3,6 +3,7 @@ package embeddings
 import (
 	"context"
 	"errenstar/internal/embeddings/fileops"
+	"io/fs"
 	"log"
 	"path/filepath"
 	"runtime"
@@ -12,9 +13,10 @@ import (
 )
 
 const (
-	embeddingModel = "nomic-embed-text"
-	embeddingURL   = "http://192.168.1.160:11434/api"
-	dbPath         = "./db"
+	embeddingModel      = "nomic-embed-text"
+	embeddingURL        = "http://192.168.1.160:11434/api"
+	dbPath              = "./db"
+	rawContentDirectory = "raw_content"
 )
 
 type EmbeddingsDB struct {
@@ -43,23 +45,55 @@ func InitializeDB() *EmbeddingsDB {
 	}
 }
 
+func (db *EmbeddingsDB) GetDocumentCount(appContext context.Context) int {
+	return db.collection.Count()
+}
+
 func (db *EmbeddingsDB) SeedDB(appContext context.Context) {
-	rawContentDirectory := "raw_content"
+	// Get initial document count
+	initialCount := db.collection.Count()
 
-	docs := loadAllMarkdown(rawContentDirectory)
+	log.Printf("Initial document count: %d", initialCount)
 
-	err := db.collection.AddDocuments(appContext, docs, runtime.NumCPU())
+	loadMarkdown := func(path string, entry fs.DirEntry, err error) error {
+		if !entry.IsDir() && strings.HasSuffix(path, ".md") {
+			log.Printf("Processing file: %s", path)
+
+			handler, err := fileops.NewFileHandler(path)
+			if err != nil {
+				log.Printf("Error creating file handler for %s: %v", path, err)
+				return err
+			}
+
+			doc := []chromem.Document{generateDocumentFromFile(handler)}
+			log.Printf("Generated document with ID: %s", doc[0].ID)
+
+			err = db.collection.AddDocuments(appContext, doc, runtime.NumCPU())
+			if err != nil {
+				log.Printf("Error adding document %s: %v", doc[0].ID, err)
+				return err
+			}
+
+			log.Printf("Successfully added document: %s", doc[0].ID)
+		}
+		return nil
+	}
+
+	err := filepath.WalkDir(rawContentDirectory, loadMarkdown)
 	if err != nil {
 		panic(err)
 	}
 
+	// Get final document count
+	finalCount := db.collection.Count()
+	log.Printf("Final document count: %d (added %d documents)", finalCount, finalCount-initialCount)
 }
 
 func (db *EmbeddingsDB) QueryDB(appContext context.Context, question string) []string {
 	query := "search_query: " + question
 	var response []string
 
-	docRes, err := db.collection.Query(appContext, query, 2, nil, nil)
+	docRes, err := db.collection.Query(appContext, query, 10, nil, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -77,25 +111,6 @@ func (db *EmbeddingsDB) QueryDB(appContext context.Context, question string) []s
 	}
 
 	return response
-}
-
-func loadAllMarkdown(directory string) []chromem.Document {
-	var docs []chromem.Document
-	// TODO: we should eventually load all the docs here
-	firstFilePath := directory + "/characters/crispin-tendies.md"
-	secondFilePath := directory + "/locations/acquenti.md"
-
-	paths := []string{firstFilePath, secondFilePath}
-	for _, path := range paths {
-		handler, err := fileops.NewFileHandler(path)
-		if err != nil {
-			panic(err)
-		}
-
-		doc := generateDocumentFromFile(handler)
-		docs = append(docs, doc)
-	}
-	return docs
 }
 
 func generateDocumentFromFile(handler *fileops.FileHandler) chromem.Document {
@@ -119,7 +134,8 @@ func getInfoFromFilePath(handler *fileops.FileHandler) (string, string) {
 	path := handler.GetPath()
 	parentDir := filepath.Dir(path)
 
-	id := filepath.Dir(path)
+	// Use the full file path as the unique ID
+	id := path
 	categoryName := filepath.Base(parentDir)
 
 	return id, categoryName
