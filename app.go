@@ -28,15 +28,11 @@ func (a *App) startup(ctx context.Context) {
 
 // CallLLM calls the local LLM model with the given input
 func (a *App) CallLLM(input string) string {
-	return a.llmService.Ask(a.ctx, input)
+	contexts := a.embeddingsDB.QueryDB(a.ctx, input)
+
+	return a.llmService.Ask(a.ctx, contexts, input)
 }
 
 func (a *App) CancelLLMRequest() string {
 	return a.llmService.CancelRequest()
-}
-
-// InitEmbeddingsDB initializes the embeddings database
-func (a *App) InitEmbeddingsDB() string {
-	a.embeddingsDB = *db.InitializeDB()
-	return "Embeddings database initialized successfully"
 }

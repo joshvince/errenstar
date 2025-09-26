@@ -67,6 +67,10 @@ window.sendMessage = function () {
 window.cancelMessage = function () {
   CancelLLMRequest().then((result) => {
     addMessage('assistant', result);
+    userInputElement.disabled = false;
+    sendBtnElement.disabled = false;
+    sendBtnElement.textContent = 'Send';
+    userInputElement.focus();
   });
 };
 

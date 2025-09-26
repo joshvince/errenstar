@@ -3,8 +3,10 @@ package embeddings
 import (
 	"context"
 	"errenstar/internal/embeddings/fileops"
+	"log"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/philippgille/chromem-go"
 )
@@ -43,18 +45,57 @@ func InitializeDB() *EmbeddingsDB {
 
 func (db *EmbeddingsDB) SeedDB(appContext context.Context) {
 	rawContentDirectory := "raw_content"
-	handler, err := fileops.NewFileHandler(rawContentDirectory + "/characters/crispin-tendies.md")
+
+	docs := loadAllMarkdown(rawContentDirectory)
+
+	err := db.collection.AddDocuments(appContext, docs, runtime.NumCPU())
 	if err != nil {
 		panic(err)
 	}
 
-	docs := []chromem.Document{generateDocumentFromFile(handler)}
+}
 
-	err = db.collection.AddDocuments(appContext, docs, runtime.NumCPU())
+func (db *EmbeddingsDB) QueryDB(appContext context.Context, question string) []string {
+	query := "search_query: " + question
+	var response []string
+
+	docRes, err := db.collection.Query(appContext, query, 2, nil, nil)
 	if err != nil {
 		panic(err)
 	}
 
+	for i, res := range docRes {
+		content := string(res.Content)
+
+		if embeddingModel == "nomic-embed-text" {
+			// This prefix is specific to the "nomic-embed-text" model.
+			content = strings.TrimPrefix(res.Content, "search_document: ")
+		}
+		log.Printf("Document %d (similarity: %f): \"%s\"\n", i+1, res.Similarity, content)
+
+		response = append(response, content)
+	}
+
+	return response
+}
+
+func loadAllMarkdown(directory string) []chromem.Document {
+	var docs []chromem.Document
+	// TODO: we should eventually load all the docs here
+	firstFilePath := directory + "/characters/crispin-tendies.md"
+	secondFilePath := directory + "/locations/acquenti.md"
+
+	paths := []string{firstFilePath, secondFilePath}
+	for _, path := range paths {
+		handler, err := fileops.NewFileHandler(path)
+		if err != nil {
+			panic(err)
+		}
+
+		doc := generateDocumentFromFile(handler)
+		docs = append(docs, doc)
+	}
+	return docs
 }
 
 func generateDocumentFromFile(handler *fileops.FileHandler) chromem.Document {
@@ -63,7 +104,7 @@ func generateDocumentFromFile(handler *fileops.FileHandler) chromem.Document {
 		panic(err)
 	}
 
-	content := "search_document" + string(markdown)
+	content := "search_document: " + string(markdown)
 
 	id, category := getInfoFromFilePath(handler)
 
