@@ -2,13 +2,15 @@ package main
 
 import (
 	"context"
+	db "errenstar/internal/embeddings/db"
 	"errenstar/internal/llm"
 )
 
 // App struct
 type App struct {
-	ctx        context.Context
-	llmService llm.LLMService
+	ctx          context.Context
+	llmService   llm.LLMService
+	embeddingsDB db.EmbeddingsDB
 }
 
 // NewApp creates a new App application struct
@@ -21,6 +23,7 @@ func NewApp() *App {
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 	a.llmService = *llm.NewLLMService()
+	a.embeddingsDB = *db.InitializeDB()
 }
 
 // CallLLM calls the local LLM model with the given input
@@ -30,4 +33,10 @@ func (a *App) CallLLM(input string) string {
 
 func (a *App) CancelLLMRequest() string {
 	return a.llmService.CancelRequest()
+}
+
+// InitEmbeddingsDB initializes the embeddings database
+func (a *App) InitEmbeddingsDB() string {
+	a.embeddingsDB = *db.InitializeDB()
+	return "Embeddings database initialized successfully"
 }

@@ -6,4 +6,6 @@ frontend/dist
 raw_content/*
 !raw_content/.keep
 
+/db/
+
 *.DS_Store
