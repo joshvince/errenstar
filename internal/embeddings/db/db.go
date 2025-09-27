@@ -2,6 +2,7 @@ package embeddings
 
 import (
 	"context"
+	documents "errenstar/internal/embeddings/documents"
 	"errenstar/internal/embeddings/fileops"
 	"io/fs"
 	"log"
@@ -63,16 +64,13 @@ func (db *EmbeddingsDB) SeedDB(appContext context.Context) {
 				return err
 			}
 
-			doc := []chromem.Document{generateDocumentFromFile(handler)}
-			log.Printf("Generated document with ID: %s", doc[0].ID)
+			docs := documents.GenerateDocumentsFromFile(handler)
 
-			err = db.collection.AddDocuments(appContext, doc, runtime.NumCPU())
+			err = db.collection.AddDocuments(appContext, docs, runtime.NumCPU())
 			if err != nil {
-				log.Printf("Error adding document %s: %v", doc[0].ID, err)
+				log.Printf("Error adding document %v", err)
 				return err
 			}
-
-			log.Printf("Successfully added document: %s", doc[0].ID)
 		}
 		return nil
 	}
@@ -109,32 +107,4 @@ func (db *EmbeddingsDB) QueryDB(appContext context.Context, question string) []s
 	}
 
 	return response
-}
-
-func generateDocumentFromFile(handler *fileops.FileHandler) chromem.Document {
-	markdown, err := handler.Read()
-	if err != nil {
-		panic(err)
-	}
-
-	content := "search_document: " + string(markdown)
-
-	id, category := getInfoFromFilePath(handler)
-
-	return chromem.Document{
-		ID:       id,
-		Metadata: map[string]string{"category": category},
-		Content:  content,
-	}
-}
-
-func getInfoFromFilePath(handler *fileops.FileHandler) (string, string) {
-	path := handler.GetPath()
-	parentDir := filepath.Dir(path)
-
-	// Use the full file path as the unique ID
-	id := path
-	categoryName := filepath.Base(parentDir)
-
-	return id, categoryName
 }
