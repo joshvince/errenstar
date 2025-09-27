@@ -8,6 +8,8 @@ import (
 	"github.com/microcosm-cc/bluemonday"
 )
 
+// This module was used to perform one-time conversion from a Kanka JSON to Markdown
+
 type KankaJSON struct {
 	Name  string `json:"name"`
 	Entry string `json:"entry"`

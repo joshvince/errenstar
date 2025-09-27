@@ -57,8 +57,6 @@ func (db *EmbeddingsDB) SeedDB(appContext context.Context) {
 
 	loadMarkdown := func(path string, entry fs.DirEntry, err error) error {
 		if !entry.IsDir() && strings.HasSuffix(path, ".md") {
-			log.Printf("Processing file: %s", path)
-
 			handler, err := fileops.NewFileHandler(path)
 			if err != nil {
 				log.Printf("Error creating file handler for %s: %v", path, err)

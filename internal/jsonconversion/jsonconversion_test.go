@@ -8,7 +8,7 @@ import (
 )
 
 func readTestFileContents(t *testing.T) []byte {
-	fixturePath := "../testdata/characters/character_example.json"
+	fixturePath := "../embeddings/testdata/characters/character_example.json"
 	handler, err := fileops.NewFileHandler(fixturePath)
 
 	if err != nil {
