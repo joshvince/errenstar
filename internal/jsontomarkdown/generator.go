@@ -1,8 +1,7 @@
-package embeddings
+package jsontomarkdown
 
 import (
 	"errenstar/internal/embeddings/fileops"
-	"errenstar/internal/embeddings/jsonconversion"
 	"io/fs"
 	"path/filepath"
 	"strings"
@@ -44,7 +43,7 @@ func createMarkdownFromJSONFile(handler *fileops.FileHandler) (*fileops.FileHand
 		return nil, err
 	}
 
-	contents, err = jsonconversion.ExtractMarkdownFromJSON(contents)
+	contents, err = ExtractMarkdownFromJSON(contents)
 	if err != nil {
 		return nil, err
 	}

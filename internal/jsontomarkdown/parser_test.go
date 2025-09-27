@@ -1,4 +1,4 @@
-package jsonconversion
+package jsontomarkdown
 
 import (
 	"errenstar/internal/embeddings/fileops"
@@ -8,7 +8,7 @@ import (
 )
 
 func readTestFileContents(t *testing.T) []byte {
-	fixturePath := "../embeddings/testdata/characters/character_example.json"
+	fixturePath := "testdata/characters/character_example.json"
 	handler, err := fileops.NewFileHandler(fixturePath)
 
 	if err != nil {

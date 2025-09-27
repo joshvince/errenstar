@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	"errenstar/internal/embeddings"
+	"errenstar/internal/jsontomarkdown"
 )
 
 func main() {
@@ -16,13 +16,13 @@ func main() {
 	}
 
 	path := os.Args[1]
-	
+
 	fmt.Printf("Converting Kanka JSON files to Markdown in directory: %s\n", path)
-	
-	err := embeddings.ConvertDirectoriesToMarkdown(path)
+
+	err := jsontomarkdown.ConvertDirectoriesToMarkdown(path)
 	if err != nil {
 		log.Fatalf("Error converting directories: %v", err)
 	}
-	
+
 	fmt.Println("Conversion completed successfully!")
 }

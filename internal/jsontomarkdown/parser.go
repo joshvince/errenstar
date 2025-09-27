@@ -1,4 +1,4 @@
-package jsonconversion
+package jsontomarkdown
 
 import (
 	"bytes"

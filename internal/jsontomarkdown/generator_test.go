@@ -1,4 +1,4 @@
-package embeddings
+package jsontomarkdown
 
 import (
 	"errenstar/internal/embeddings/fileops"
