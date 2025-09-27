@@ -4,16 +4,8 @@ import (
 	"context"
 	"fmt"
 	"html/template"
-	"net/http"
 	"os/exec"
 	"strings"
-
-	"github.com/sashabaranov/go-openai"
-)
-
-const (
-	ollamaBaseURL = "http://192.168.1.160:11434/v1"
-	llmModel      = "llama3:8b"
 )
 
 type LLMService struct {
@@ -22,15 +14,6 @@ type LLMService struct {
 
 func NewLLMService() *LLMService {
 	return &LLMService{}
-}
-
-func (service *LLMService) Ask(appContext context.Context, contexts []string, question string) string {
-	fmt.Print("Received input: ", question)
-
-	ctx, cancel := context.WithCancel(appContext)
-	service.cancelFunc = cancel
-
-	return askRemoteOllamaModel(ctx, contexts, question)
 }
 
 func (service *LLMService) CancelRequest() string {
@@ -42,7 +25,41 @@ func (service *LLMService) CancelRequest() string {
 	return "Cancelled the request"
 }
 
-var systemPromptTpl = template.Must(template.New("system_prompt").Parse(`
+func (service *LLMService) Ask(appContext context.Context, contexts []string, question string) string {
+	fmt.Print("Received input: ", question)
+
+	ctx, cancel := context.WithCancel(appContext)
+	service.cancelFunc = cancel
+
+	return callCLIModel(ctx, contexts, question)
+	// You can replace this with this line if you want to call a remote server
+	// return askRemoteOllamaModel(ctx, contexts, question)
+}
+
+func callCLIModel(ctx context.Context, userContexts []string, input string) string {
+	systemPrompt := cliSystemPrompt()
+	userInput := userInputWithContexts(userContexts, input)
+
+	fmt.Printf("Gave the model this system prompt: %s", systemPrompt)
+	fmt.Printf("Asked the model: %s", userInput)
+
+	cmd := exec.CommandContext(
+		ctx, "llm", userInput,
+		"-m", "mlx-community/Llama-3.2-3B-Instruct-4bit",
+		"-o", "temperature", "0.1", "-s", systemPrompt,
+	)
+
+	output, err := cmd.Output()
+
+	if err != nil {
+		return fmt.Sprintf("Error calling LLM: %v", err)
+	}
+
+	return strings.TrimSpace(string(output))
+}
+
+func cliSystemPrompt() string {
+	systemPromptTemplate := template.Must(template.New("system_prompt").Parse(`
 You are a knowledge assistant for the fictional world of Sonovem, a Dungeons & Dragons campaign by Lloyd Morgan.
 
 The player characters in this campaign will be referred to by the user as either the party, the team, the Royaum Rippers, or even just the Rippers.
@@ -57,70 +74,30 @@ CRITICAL RULES - YOU MUST FOLLOW THESE EXACTLY:
 6. Keep responses concise and factual
 
 Answer in a neutral, journalistic tone. Do not embellish, interpret, or expand beyond what is explicitly written in the context.
-{{- /* Stop here if no context is provided. The rest below is for handling contexts. */ -}}
-{{- if . -}}
-Answer ONLY using the information provided in the context below. If the context doesn't contain relevant information for the question, respond with "I don't have information about that in the knowledge base."
-
-The following context contains information from the Sonovem knowledge base:
-
-<context>
-    {{- if . -}}
-    {{- range $context := .}}
-    - {{.}}{{end}}
-    {{- end}}
-</context>
-{{- end -}}
-`))
-
-func askRemoteOllamaModel(ctx context.Context, contexts []string, question string) string {
-	// We can use the OpenAI client because Ollama is compatible with OpenAI's API.
-	openAIClient := openai.NewClientWithConfig(openai.ClientConfig{
-		BaseURL:    ollamaBaseURL,
-		HTTPClient: http.DefaultClient,
-	})
+Answer ONLY using the information provided as context marked with <context>.
+If the context doesn't contain relevant information for the question, respond with "I don't have information about that in the knowledge base."`))
 
 	sb := &strings.Builder{}
-	err := systemPromptTpl.Execute(sb, contexts)
+	err := systemPromptTemplate.Execute(sb, "")
 	if err != nil {
 		panic(err)
 	}
-
-	fmt.Printf("Gave the model this system prompt and context: %s", sb.String())
-	fmt.Printf("Asked the model: %s", question)
-
-	messages := []openai.ChatCompletionMessage{
-		{
-			Role:    openai.ChatMessageRoleSystem,
-			Content: sb.String(),
-		}, {
-			Role:    openai.ChatMessageRoleUser,
-			Content: "Question: " + question,
-		},
-	}
-
-	res, err := openAIClient.CreateChatCompletion(ctx, openai.ChatCompletionRequest{
-		Model:       llmModel,
-		Messages:    messages,
-		Temperature: 0.1, // Low temperature for more deterministic, factual responses
-	})
-	if err != nil {
-		panic(err)
-	}
-
-	reply := res.Choices[0].Message.Content
-	reply = strings.TrimSpace(reply)
-
-	return reply
+	return sb.String()
 }
 
-func callCLIModel(ctx context.Context, input string) string {
-	cmd := exec.CommandContext(ctx, "llm", "-m", "mlx-community/Llama-3.2-3B-Instruct-4bit", input)
+func userInputWithContexts(contexts []string, question string) string {
+	var sb strings.Builder
+	sb.WriteString("<context>\n")
 
-	output, err := cmd.Output()
-
-	if err != nil {
-		return fmt.Sprintf("Error calling LLM: %v", err)
+	for i, context := range contexts {
+		sb.WriteString("\t" + context + "\n")
+		if i < len(contexts)-1 {
+			sb.WriteString("\t----\n")
+		}
 	}
 
-	return strings.TrimSpace(string(output))
+	sb.WriteString("</context>\n")
+	sb.WriteString("\nQuestion: " + question)
+
+	return sb.String()
 }

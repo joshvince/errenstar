@@ -2,16 +2,16 @@ package main
 
 import (
 	"context"
-	db "errenstar/internal/embeddings/db"
+	"errenstar/internal/embeddings"
 	"errenstar/internal/llm"
 	"log"
 )
 
 // App struct
 type App struct {
-	ctx          context.Context
-	llmService   llm.LLMService
-	embeddingsDB db.EmbeddingsDB
+	ctx               context.Context
+	llmService        llm.LLMService
+	embeddingsService embeddings.EmbeddingsService
 }
 
 // NewApp creates a new App application struct
@@ -24,17 +24,17 @@ func NewApp() *App {
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 	a.llmService = *llm.NewLLMService()
-	a.embeddingsDB = *db.InitializeDB()
+	a.embeddingsService = *embeddings.NewEmbeddingsService()
 
 	// Log document count on app startup
-	count := a.embeddingsDB.GetDocumentCount(ctx)
+	count := a.embeddingsService.GetDocumentCount(ctx)
 
 	log.Printf("App startup - documents in collection: %d", count)
 }
 
 // CallLLM calls the local LLM model with the given input
 func (a *App) CallLLM(input string) string {
-	contexts := a.embeddingsDB.QueryDB(a.ctx, input)
+	contexts := a.embeddingsService.FetchContexts(a.ctx, input)
 
 	return a.llmService.Ask(a.ctx, contexts, input)
 }
