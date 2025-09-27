@@ -3,8 +3,9 @@ package embeddings
 import (
 	"context"
 	"errenstar/internal/embeddings/db"
-	"log"
-	"strings"
+	"errenstar/internal/embeddings/fileops"
+
+	"github.com/philippgille/chromem-go"
 )
 
 const (
@@ -26,24 +27,43 @@ func (service *EmbeddingsService) GetDocumentCount(appContext context.Context) i
 }
 
 func (service *EmbeddingsService) FetchContexts(appContext context.Context, question string) []string {
+	var response []string
+
 	results, err := service.db.QueryDB(appContext, question)
 	if err != nil {
 		panic(err)
 	}
 
-	var response []string
+	handlers := uniqueFileHandlersForResults(results)
+	var fileContents []byte
 
-	// TODO: we need to fetch the unique original_document values from the metadata
-	// Then use that to fetch some files using fileops
-	// And _that_ is the slice we should send as context
-
-	for i, res := range results {
-		content := strings.TrimPrefix(res.Content, "search_document: ")
-
-		log.Printf("Document %d (similarity: %f): \"%s\"\n", i+1, res.Similarity, content)
-
-		response = append(response, content)
+	for _, handler := range handlers {
+		fileBytes, err := handler.Read()
+		if err == nil {
+			fileContents = fileBytes
+			response = append(response, string(fileContents))
+		}
 	}
 
 	return response
+}
+
+func uniqueFileHandlersForResults(results []chromem.Result) []fileops.FileHandler {
+	var handlers []fileops.FileHandler
+
+	// This creates a Set, effectively. It's memory efficient because the struct{} is 0 bytess
+	uniquePaths := make(map[string]struct{})
+
+	for _, result := range results {
+		uniquePaths[result.Metadata["original_document"]] = struct{}{}
+	}
+
+	for path := range uniquePaths {
+		// Ignore if the file cannot be found
+		handler, _ := fileops.NewFileHandler(path)
+
+		handlers = append(handlers, *handler)
+	}
+
+	return handlers
 }

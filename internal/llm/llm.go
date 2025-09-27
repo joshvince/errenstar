@@ -37,8 +37,8 @@ func (service *LLMService) Ask(appContext context.Context, contexts []string, qu
 }
 
 func callCLIModel(ctx context.Context, userContexts []string, input string) string {
-	systemPrompt := cliSystemPrompt()
-	userInput := userInputWithContexts(userContexts, input)
+	systemPrompt := cliSystemPromptWithContext(userContexts)
+	userInput := input
 
 	fmt.Printf("Gave the model this system prompt: %s", systemPrompt)
 	fmt.Printf("Asked the model: %s", userInput)
@@ -58,8 +58,8 @@ func callCLIModel(ctx context.Context, userContexts []string, input string) stri
 	return strings.TrimSpace(string(output))
 }
 
-func cliSystemPrompt() string {
-	systemPromptTemplate := template.Must(template.New("system_prompt").Parse(`
+func cliSystemPromptWithContext(contexts []string) string {
+	systemPromptTemplate := template.Must(template.New("system_prompt_with_context").Parse(`
 You are a knowledge assistant for the fictional world of Sonovem, a Dungeons & Dragons campaign by Lloyd Morgan.
 
 The player characters in this campaign will be referred to by the user as either the party, the team, the Royaum Rippers, or even just the Rippers.
@@ -74,30 +74,19 @@ CRITICAL RULES - YOU MUST FOLLOW THESE EXACTLY:
 6. Keep responses concise and factual
 
 Answer in a neutral, journalistic tone. Do not embellish, interpret, or expand beyond what is explicitly written in the context.
-Answer ONLY using the information provided as context marked with <context>.
-If the context doesn't contain relevant information for the question, respond with "I don't have information about that in the knowledge base."`))
+Answer ONLY using the information provided in the context below. If the context doesn't contain relevant information for the question, respond with "I don't have information about that in the knowledge base."
+
+The following context contains information from the Sonovem knowledge base:
+
+<context>
+{{range $i, $context := .}}{{if $i}}	----
+{{end}}	{{$context}}
+{{end}}</context>`))
 
 	sb := &strings.Builder{}
-	err := systemPromptTemplate.Execute(sb, "")
+	err := systemPromptTemplate.Execute(sb, contexts)
 	if err != nil {
 		panic(err)
 	}
-	return sb.String()
-}
-
-func userInputWithContexts(contexts []string, question string) string {
-	var sb strings.Builder
-	sb.WriteString("<context>\n")
-
-	for i, context := range contexts {
-		sb.WriteString("\t" + context + "\n")
-		if i < len(contexts)-1 {
-			sb.WriteString("\t----\n")
-		}
-	}
-
-	sb.WriteString("</context>\n")
-	sb.WriteString("\nQuestion: " + question)
-
 	return sb.String()
 }
